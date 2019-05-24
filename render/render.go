@@ -2,7 +2,6 @@ package render
 
 import (
 	"fmt"
-	"github.com/danil-lashin/bip-portfolio/api"
 	"github.com/danil-lashin/bip-portfolio/config"
 	"github.com/danil-lashin/bip-portfolio/helpers"
 	"github.com/danil-lashin/bip-portfolio/models"
@@ -13,7 +12,6 @@ import (
 
 func Render(s *models.Summary) {
 	cfg := config.Get()
-	nodeApi := api.NewNodeAPI(cfg.NodeURL)
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
@@ -23,17 +21,8 @@ func Render(s *models.Summary) {
 
 	var data [][]string
 	for _, coin := range s.GetCoins() {
-		if coin.Symbol == "BIP" {
-			data = append(data, []string{coin.Symbol, helpers.PipToBip(coin.Value), helpers.PipToBip(coin.Value), helpers.BipToUsd(coin.Value)})
-			totalOwned.Add(totalOwned, coin.Value)
-			continue
-		}
-
-		estimate := nodeApi.EstimateCoinSell(coin.Symbol, "BIP", coin.Value.String())
-
-		bipValue := helpers.StrToBig(estimate.Result.WillGet)
-		data = append(data, []string{coin.Symbol, helpers.PipToBip(coin.Value), helpers.PipToBip(bipValue), helpers.BipToUsd(bipValue)})
-		totalOwned.Add(totalOwned, bipValue)
+		data = append(data, []string{coin.Symbol, helpers.PipToBip(coin.Value), helpers.PipToBip(coin.BipValue), helpers.BipToUsd(coin.BipValue)})
+		totalOwned.Add(totalOwned, coin.BipValue)
 	}
 
 	table.AppendBulk(data)

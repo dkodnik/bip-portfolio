@@ -1,6 +1,9 @@
 package models
 
 import (
+	"github.com/danil-lashin/bip-portfolio/api"
+	"github.com/danil-lashin/bip-portfolio/config"
+	"github.com/danil-lashin/bip-portfolio/helpers"
 	"math/big"
 	"sort"
 )
@@ -24,23 +27,32 @@ func (s *Summary) AddCoin(coin string, value *big.Int) {
 }
 
 func (s *Summary) GetCoins() []Coin {
-	var coins []Coin
+	nodeApi := api.NewNodeAPI(config.Get().NodeURL)
 
+	var coins []Coin
 	for coin, balance := range s.coins {
+		bipValue := balance
+		if coin != "BIP" {
+			estimate := nodeApi.EstimateCoinSell(coin, "BIP", balance.String())
+			bipValue = helpers.StrToBig(estimate.Result.WillGet)
+		}
+
 		coins = append(coins, Coin{
-			Symbol: coin,
-			Value:  balance,
+			Symbol:   coin,
+			Value:    balance,
+			BipValue: bipValue,
 		})
 	}
 
 	sort.Slice(coins, func(i, j int) bool {
-		return coins[i].Value.Cmp(coins[j].Value) == 1
+		return coins[i].BipValue.Cmp(coins[j].BipValue) == 1
 	})
 
 	return coins
 }
 
 type Coin struct {
-	Symbol string
-	Value *big.Int
+	Symbol   string
+	Value    *big.Int
+	BipValue *big.Int
 }
